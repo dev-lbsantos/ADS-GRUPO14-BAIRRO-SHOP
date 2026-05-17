@@ -53,6 +53,7 @@ export default function App() {
     const [view, setView] = useState('home');
     const [selectedStore, setSelectedStore] = useState<any>(null);
     const [stores, setStores] = useState<any[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
       fetch('http://localhost:5000/api/stores')
@@ -61,7 +62,15 @@ export default function App() {
         .catch(err => console.error("Erro ao buscar lojas:", err));
     }, []);
 
-    const HomeView = () => (
+    const filteredStores = stores.filter(store => {
+      const term = searchTerm.trim().toLowerCase();
+      if (!term) return true;
+      const nameMatch = store.name?.toLowerCase().includes(term);
+      const cepMatch = store.cep?.toLowerCase().includes(term);
+      return nameMatch || cepMatch;
+    });
+
+    return view === 'home' ? (
       <div className="pb-20 min-h-screen bg-gray-50">
         <div className="bg-blue-600 p-6 rounded-b-[2rem] text-white shadow-md">
           <div className="flex justify-between items-center mb-6">
@@ -72,17 +81,23 @@ export default function App() {
             <div className="w-6" />
           </div>
           <div className="relative">
-            <input type="text" placeholder="Buscar lojas..." className="w-full bg-white text-gray-900 pl-12 pr-4 py-3 rounded-xl shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-orange-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="Buscar por nome ou CEP..."
+              className="w-full bg-white text-gray-900 pl-12 pr-4 py-3 rounded-xl shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
             <Search className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
           </div>
         </div>
 
         <div className="px-4 mt-6 space-y-4">
-          <h2 className="font-bold text-gray-800 text-lg">Comércios da Região ({stores.length})</h2>
-          {stores.length === 0 ? (
-            <p className="text-gray-500 text-center mt-10">Nenhuma loja cadastrada ainda.</p>
+          <h2 className="font-bold text-gray-800 text-lg">Comércios da Região ({filteredStores.length})</h2>
+          {filteredStores.length === 0 ? (
+            <p className="text-gray-500 text-center mt-10">Nenhuma loja encontrada com esse nome ou CEP.</p>
           ) : (
-            stores.map(store => (
+            filteredStores.map(store => (
               <button key={store._id} onClick={() => { setSelectedStore(store); setView('store'); }} className="w-full bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 items-center text-left">
                 <div className="w-16 h-16 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0 text-blue-400">
                   <Store className="w-8 h-8" />
@@ -97,9 +112,7 @@ export default function App() {
           )}
         </div>
       </div>
-    );
-
-    const StoreView = () => (
+    ) : (
       <div className="pb-20 bg-gray-50 min-h-screen">
         <div className="h-48 bg-blue-600 relative">
           <button onClick={() => setView('home')} className="absolute top-6 left-4 bg-white/20 backdrop-blur p-2 rounded-full text-white">
@@ -149,8 +162,6 @@ export default function App() {
         </div>
       </div>
     );
-
-    return view === 'home' ? <HomeView /> : <StoreView />;
   };
 
   // ==========================================
