@@ -4,12 +4,16 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 const storeRoutes = require('./src/routes/storeRoutes');
+const authRoutes = require('./src/routes/authRoutes'); // <-- Nova rota importada
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Usando as rotas
 app.use('/api/stores', storeRoutes);
+app.use('/api/auth', authRoutes); // <-- Nova rota ativada
 
 app.get('/', (req, res) => {
   res.json({ message: "🚀 API do BairroShop rodando com sucesso!" });

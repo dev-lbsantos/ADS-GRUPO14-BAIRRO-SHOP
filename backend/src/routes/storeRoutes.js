@@ -2,77 +2,47 @@ const express = require('express');
 const router = express.Router();
 const Store = require('../models/Store');
 
+// ROTA DE BUSCA (GET)
 router.get('/', async (req, res) => {
   try {
-    const stores = await Store.find();
+    const filter = req.query.merchantId ? { merchantId: req.query.merchantId } : {};
+    const stores = await Store.find(filter);
     res.json(stores);
   } catch (error) {
     res.status(500).json({ message: "Erro ao buscar lojas", error });
   }
 });
 
+// ROTA DE CRIAÇÃO (POST)
 router.post('/', async (req, res) => {
   try {
-
-    console.log("Dados recebidos:");
-    console.log(req.body);
-
-    const {
-      name,
-      category,
-      cep,
-      address,
-      phone,
-      products
-    } = req.body;
-
-    // procura pela loja usando telefone OU nome
-    let existingStore = await Store.findOne({
-      $or: [
-        { phone: phone },
-        { name: name }
-      ]
-    });
-
-    if (existingStore) {
-
-      // adiciona produtos à loja existente
-      if (products && products.length > 0) {
-        existingStore.products.push(...products);
-      }
-
-      const updatedStore = await existingStore.save();
-
-      return res.status(200).json({
-        message: "Loja existente atualizada",
-        store: updatedStore
-      });
-    }
-
-    const newStore = new Store({
-      name,
-      category,
-      cep,
-      address,
-      phone,
-      products
-    });
-
+    const newStore = new Store(req.body);
     const savedStore = await newStore.save();
-
-    res.status(201).json({
-      message: "Nova loja criada",
-      store: savedStore
-    });
-
+    res.status(201).json(savedStore);
   } catch (error) {
+    res.status(400).json({ message: "Erro ao criar loja", error });
+  }
+});
 
-    console.error(error);
+// ROTA DE ATUALIZAÇÃO (PUT) - NOVO!
+router.put('/:id', async (req, res) => {
+  try {
+    // Procura a loja pelo ID e atualiza com os novos dados enviados
+    const updatedStore = await Store.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updatedStore);
+  } catch (error) {
+    res.status(400).json({ message: "Erro ao atualizar loja", error });
+  }
+});
 
-    res.status(400).json({
-      message: "Erro ao salvar",
-      error
-    });
+// ROTA DE EXCLUSÃO (DELETE) - NOVO!
+router.delete('/:id', async (req, res) => {
+  try {
+    // Procura a loja pelo ID e deleta do banco
+    await Store.findByIdAndDelete(req.params.id);
+    res.json({ message: "Loja deletada com sucesso!" });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao deletar loja", error });
   }
 });
 
